@@ -1,0 +1,114 @@
+@import 'tailwindcss';
+
+/* Тёмная тема включается классом .dark на <html> (см. settings.theme) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans:
+    'Inter', 'Roboto', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Акцент — глубокий сине-фиолетовый, как в Linear */
+  --color-accent: #5e6ad2;
+  --color-accent-hover: #4f5bc4;
+  --color-accent-soft: #eef0fb;
+  --color-accent-ring: #5e6ad233;
+
+  --radius-card: 0.625rem;
+}
+
+/* Семантические поверхности: значения переключаются вместе с темой */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+}
+
+:root {
+  --canvas: #f7f8f9;
+  --surface: #ffffff;
+  --muted: #f1f2f4;
+  --line: #e6e8ec;
+  --line-strong: #d3d6dd;
+  --ink: #171a1f;
+  --ink-muted: #5f6672;
+  --ink-subtle: #8b919c;
+
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: #0d0e11;
+  --surface: #16181c;
+  --muted: #1b1e23;
+  --line: #262a31;
+  --line-strong: #363b44;
+  --ink: #f2f3f5;
+  --ink-muted: #a1a7b1;
+  --ink-subtle: #6f7681;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+}
+
+@layer utilities {
+  /* Тонкий скроллбар для колонок и доски */
+  .scrollbar-subtle {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-thumb {
+    background-color: var(--line-strong);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

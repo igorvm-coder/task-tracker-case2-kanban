@@ -1,32 +1,102 @@
-# React + TypeScript + Vite
+# Kanban-трекер задач
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+MVP однопользовательского Kanban-трекера в стиле Linear: React + TypeScript + Vite + Tailwind CSS,
+drag-and-drop на @dnd-kit, хранение данных в localStorage.
 
-Currently, two official plugins are available:
+## Запуск
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install     # установка зависимостей
+npm run dev     # dev-сервер: http://localhost:5173
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Дополнительные команды:
+
+```bash
+npm run build       # проверка типов + production-сборка в dist/
+npm run preview     # локальный просмотр собранной версии
+npm run typecheck   # проверка типов без сборки
+npm run lint        # статический анализ (oxlint)
+```
+
+Требуется Node.js 20+ (проверено на Node 22).
+
+## Что реализовано на текущем этапе
+
+- Доска из четырёх фиксированных колонок: «Новая», «В работе», «На проверке», «Готово».
+- Карточка задачи: название, бейдж приоритета с иконкой и текстовой подписью, аватар исполнителя
+  (кружок с инициалами), теги, срок выполнения (просроченные подсвечиваются красным).
+- Drag-and-drop:
+  - перетаскивание между колонками (меняет статус задачи);
+  - перетаскивание внутри колонки (меняет порядок);
+  - тень и полупрозрачный оригинал при перетаскивании, плавающая копия (DragOverlay);
+  - подсветка целевой колонки и пунктирная заглушка места вставки;
+  - мышь, сенсор (долгое нажатие) и клавиатура (Space — взять, стрелки — переместить, Escape — отмена);
+  - автопрокрутка колонок и доски средствами @dnd-kit.
+- Сохранение данных в localStorage (`kanban-board-data`) с автосохранением после каждого изменения.
+- Демо-данные: 6 задач с разными приоритетами, исполнителями, тегами и сроками.
+- Тёмная тема заложена в токены оформления (переключатель появится на следующем шаге).
+
+### Что запланировано на следующие шаги
+
+Создание/редактирование/удаление задач (модальное окно), поиск и фильтры, переключатель темы,
+импорт/экспорт JSON. Сейчас кнопка «Создать задачу» и клик по карточке показывают информационное
+сообщение.
+
+## Структура проекта
+
+```
+src/
+  app/App.tsx                 корневой компонент, тосты и баннер ошибок хранилища
+  components/
+    layout/TopBar.tsx         верхняя панель: название доски, кнопка «Создать задачу»
+    board/KanbanBoard.tsx     DndContext, колонки, DragOverlay
+    board/KanbanColumn.tsx    колонка: заголовок, счётчик, droppable-область, список
+    board/TaskCard.tsx         карточка задачи (useSortable)
+    board/TaskCardContent.tsx  содержимое карточки (общее для карточки и DragOverlay)
+    board/DragOverlayCard.tsx  плавающая копия карточки при перетаскивании
+    board/EmptyColumn.tsx      пустое состояние колонки
+    ui/                        Button, Badge (приоритет), Tag, Avatar
+  constants/
+    columns.ts                 четыре колонки, их порядок и акценты
+    priorities.ts              приоритеты: подпись, цвета, иконки
+  hooks/
+    useLocalStorage.ts         состояние, синхронизированное с localStorage
+    useBoard.ts                состояние доски и операции над задачами
+    useDragAndDrop.ts          логика перетаскивания (сенсоры, колонки, позиция вставки)
+  lib/
+    cn.ts                      конкатенация классов
+    storage.ts                 ключ хранилища и проверка структуры данных
+    seed.ts                    демо-задачи и исполнители
+    taskUtils.ts               группировка, пересчёт позиций, перенос задач, даты
+  styles/globals.css          Tailwind v4: тема, токены, базовые стили
+  types/
+    task.ts                    Task, TaskStatus, TaskPriority, Assignee
+    board.ts                   BoardData, BoardSettings
+```
+
+## Ключевые решения
+
+**Данные.** Задачи хранятся плоским массивом; колонка определяется полем `status`, порядок внутри
+колонки — полем `position`. Любая операция пересчитывает `position` и приводит массив к порядку
+«колонка → позиция», поэтому порядок устойчив после перезагрузки.
+
+**Перетаскивание.** Данные не меняются до отпускания карточки: во время перетаскивания
+показываются только визуальные эффекты (полупрозрачный оригинал, DragOverlay, подсветка колонки,
+заглушка места вставки). Изменение применяется в `onDragEnd` одной операцией
+(`moveTask` в `lib/taskUtils.ts`), которая заодно обновляет статус и правила `completedAt`:
+при переходе в «Готово» дата завершения проставляется, при выходе — очищается, при перемещении
+внутри «Готово» не меняется.
+
+**Сенсоры.** `MouseSensor` с порогом 5 px (клик не превращается в перетаскивание), `TouchSensor`
+с задержкой 180 мс и допуском 8 px (обычный свайп остаётся скроллом, перетаскивание начинается
+долгим нажатием), `KeyboardSensor` для доступности. У карточек не отключается `touch-action`,
+чтобы сохранить вертикальную прокрутку колонок и горизонтальную прокрутку доски.
+
+**Хранилище.** `useLocalStorage` пишет данные после каждого изменения состояния, не трогает
+сохранённые данные при первом рендере, проверяет структуру при чтении и сообщает об ошибках
+(недоступное хранилище, превышенная квота, повреждённые данные), не ломая приложение.
+
+**Оформление.** Tailwind CSS v4: тема задана CSS-переменными (`--canvas`, `--surface`, `--line`,
+`--ink` и т.д.), светлая и тёмная темы переключаются добавлением класса `.dark` на `<html>`.
+Шрифт Inter подключён через Google Fonts с fallback на Roboto и системные шрифты.

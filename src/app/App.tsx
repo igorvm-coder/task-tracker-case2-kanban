@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { AlertTriangle, Info, X } from 'lucide-react'
 
 import { KanbanBoard } from '../components/board/KanbanBoard'
@@ -18,13 +18,13 @@ export default function App() {
     return () => window.clearTimeout(timer)
   }, [notice])
 
-  const handleCreateTask = () => {
+  const handleCreateTask = useCallback(() => {
     setNotice('Создание задач появится на следующем шаге — сейчас работает перетаскивание.')
-  }
+  }, [])
 
-  const handleTaskClick = (task: Task) => {
+  const handleTaskClick = useCallback((task: Task) => {
     setNotice(`«${task.title}» — редактирование задачи появится на следующем шаге.`)
-  }
+  }, [])
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-canvas">

@@ -1,4 +1,5 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, KeyboardEvent } from 'react'
+import { memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -13,7 +14,7 @@ interface TaskCardProps {
 }
 
 /** Карточка задачи в колонке: перетаскивается мышью, пальцем и с клавиатуры. */
-export function TaskCard({ task, assignee, onClick }: TaskCardProps) {
+export const TaskCard = memo(function TaskCard({ task, assignee, onClick }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -31,6 +32,21 @@ export function TaskCard({ task, assignee, onClick }: TaskCardProps) {
     transition,
   }
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // Сначала даём dnd-kit обработать клавиши (Space — начало перетаскивания).
+    const startDrag = listeners?.onKeyDown as
+      | ((event: KeyboardEvent<HTMLDivElement>) => void)
+      | undefined
+    startDrag?.(event)
+    if (event.defaultPrevented) return
+
+    // Enter открывает карточку, как и обычный клик.
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      onClick?.(task)
+    }
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -38,12 +54,7 @@ export function TaskCard({ task, assignee, onClick }: TaskCardProps) {
       {...attributes}
       {...listeners}
       onClick={() => onClick?.(task)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault()
-          onClick?.(task)
-        }
-      }}
+      onKeyDown={handleKeyDown}
       className={cn(
         'group cursor-grab touch-manipulation select-none rounded-[10px] bg-surface p-3 shadow-xs ring-1 ring-line transition-[box-shadow,opacity] duration-150',
         'hover:shadow-md hover:ring-line-strong active:cursor-grabbing',
@@ -53,4 +64,4 @@ export function TaskCard({ task, assignee, onClick }: TaskCardProps) {
       <TaskCardContent task={task} assignee={assignee} />
     </div>
   )
-}
+})

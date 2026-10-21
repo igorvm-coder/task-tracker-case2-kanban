@@ -7,13 +7,15 @@ import { formToTaskFields } from '../lib/taskValidation'
 import type { TaskFormValues } from '../lib/taskValidation'
 import type { StorageError } from './useLocalStorage'
 import { useLocalStorage } from './useLocalStorage'
-import type { BoardData } from '../types/board'
+import type { BoardData, Theme } from '../types/board'
 import type { Task, TaskStatus } from '../types/task'
 
 export interface UseBoardResult {
   tasks: Task[]
   assignees: BoardData['assignees']
   settings: BoardData['settings']
+  /** Полный объект данных доски (для экспорта). */
+  boardData: BoardData
   /** Ошибка чтения/записи localStorage, если она возникла. */
   storageError: StorageError | null
   dismissStorageError: () => void
@@ -25,6 +27,8 @@ export interface UseBoardResult {
   updateTask: (taskId: string, values: TaskFormValues) => void
   /** Удаление задачи с пересчётом позиций. */
   deleteTask: (taskId: string) => void
+  /** Смена темы оформления (сохраняется в settings.theme). */
+  setTheme: (theme: Theme) => void
   /** Прямая замена списка задач (используется при импорте). */
   setTasks: (tasks: Task[]) => void
   setData: (updater: (previous: BoardData) => BoardData) => void
@@ -102,6 +106,13 @@ export function useBoard(): UseBoardResult {
     [setData],
   )
 
+  const setTheme = useCallback(
+    (theme: Theme) => {
+      setData((previous) => ({ ...previous, settings: { ...previous.settings, theme } }))
+    },
+    [setData],
+  )
+
   const dismissStorageError = useCallback(() => setStorageError(null), [])
 
   return useMemo(
@@ -109,25 +120,27 @@ export function useBoard(): UseBoardResult {
       tasks,
       assignees: data.assignees,
       settings: data.settings,
+      boardData: data,
       storageError,
       dismissStorageError,
       moveTask,
       createTask,
       updateTask,
       deleteTask,
+      setTheme,
       setTasks,
       setData,
     }),
     [
       tasks,
-      data.assignees,
-      data.settings,
+      data,
       storageError,
       dismissStorageError,
       moveTask,
       createTask,
       updateTask,
       deleteTask,
+      setTheme,
       setTasks,
       setData,
     ],

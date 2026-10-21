@@ -1,7 +1,10 @@
 import { LayoutDashboard, Plus } from 'lucide-react'
 
 import { TaskFilters } from '../filters/TaskFilters'
+import { SettingsMenu } from '../settings/SettingsMenu'
+import { ThemeToggle } from '../settings/ThemeToggle'
 import type { TaskFilters as Filters } from '../../lib/filters'
+import type { Theme } from '../../types/board'
 import type { Assignee } from '../../types/task'
 import { Button } from '../ui/Button'
 
@@ -12,6 +15,10 @@ interface TopBarProps {
   visibleCount: number
   assignees: Assignee[]
   filters: Filters
+  theme: Theme
+  onThemeToggle: () => void
+  onExport: () => void
+  onImport: (file: File) => void
   onFiltersChange: (filters: Filters) => void
   onCreateTask: () => void
 }
@@ -32,6 +39,10 @@ export function TopBar({
   visibleCount,
   assignees,
   filters,
+  theme,
+  onThemeToggle,
+  onExport,
+  onImport,
   onFiltersChange,
   onCreateTask,
 }: TopBarProps) {
@@ -56,14 +67,23 @@ export function TopBar({
           </div>
         </div>
 
-        <Button
-          variant="primary"
-          icon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />}
-          onClick={onCreateTask}
-        >
-          <span className="hidden sm:inline">Создать задачу</span>
-          <span className="sm:hidden">Создать</span>
-        </Button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle theme={theme} onToggle={onThemeToggle} className="hidden sm:grid" />
+          <SettingsMenu
+            theme={theme}
+            onThemeToggle={onThemeToggle}
+            onExport={onExport}
+            onImport={onImport}
+          />
+          <Button
+            variant="primary"
+            icon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />}
+            onClick={onCreateTask}
+          >
+            <span className="hidden sm:inline">Создать задачу</span>
+            <span className="sm:hidden">Создать</span>
+          </Button>
+        </div>
       </div>
 
       <TaskFilters assignees={assignees} filters={filters} onChange={onFiltersChange} />

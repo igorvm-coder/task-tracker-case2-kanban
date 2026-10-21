@@ -4,12 +4,15 @@ import { AlertTriangle, Info, X } from 'lucide-react'
 import { KanbanBoard } from '../components/board/KanbanBoard'
 import { DeleteTaskDialog } from '../components/task/DeleteTaskDialog'
 import { TaskModal } from '../components/task/TaskModal'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { TopBar } from '../components/layout/TopBar'
 import { useBoard } from '../hooks/useBoard'
 import { EMPTY_FILTERS, filterTasks, hasActiveFilters } from '../lib/filters'
+import { exportBoardData, parseBoardData } from '../lib/importExport'
 import type { TaskFilters } from '../lib/filters'
 import type { TaskFormValues } from '../lib/taskValidation'
 import type { Task } from '../types/task'
+import type { BoardData } from '../types/board'
 
 const NOTICE_TIMEOUT = 4000
 
@@ -20,18 +23,29 @@ export default function App() {
   const {
     tasks,
     assignees,
+    settings,
+    boardData,
     storageError,
     dismissStorageError,
     moveTask,
     createTask,
     updateTask,
     deleteTask,
+    setTheme,
+    setData,
   } = useBoard()
 
   const [filters, setFilters] = useState<TaskFilters>(EMPTY_FILTERS)
   const [taskModal, setTaskModal] = useState<TaskModalState | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Task | null>(null)
+  const [importCandidate, setImportCandidate] = useState<BoardData | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.toggle('dark', settings.theme === 'dark')
+  }, [settings.theme])
 
   useEffect(() => {
     if (!notice) return
@@ -81,10 +95,6 @@ export default function App() {
     [taskModal, editingTask, createTask, updateTask],
   )
 
-  const handleRequestDelete = useCallback((task: Task) => {
-    setPendingDelete(task)
-  }, [])
-
   const handleConfirmDelete = useCallback(() => {
     if (!pendingDelete) return
     deleteTask(pendingDelete.id)
@@ -93,6 +103,41 @@ export default function App() {
     setTaskModal(null)
   }, [pendingDelete, deleteTask])
 
+  const handleRequestDelete = useCallback((task: Task) => {
+    setPendingDelete(task)
+  }, [])
+
+  const handleThemeToggle = useCallback(() => {
+    setTheme(settings.theme === 'dark' ? 'light' : 'dark')
+  }, [setTheme, settings.theme])
+
+  const handleExport = useCallback(() => {
+    exportBoardData(boardData)
+    setNotice('Файл экспорта скачан')
+  }, [boardData])
+
+  const handleImport = useCallback((file: File) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const text = typeof reader.result === 'string' ? reader.result : ''
+      const result = parseBoardData(text)
+      if (!result.ok) {
+        setImportError(result.error)
+        return
+      }
+      setImportCandidate(result.data)
+    }
+    reader.onerror = () => setImportError('Не удалось прочитать файл.')
+    reader.readAsText(file)
+  }, [])
+
+  const handleConfirmImport = useCallback(() => {
+    if (!importCandidate) return
+    setData(() => importCandidate)
+    setNotice('Данные импортированы')
+    setImportCandidate(null)
+  }, [importCandidate, setData])
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-canvas">
       <TopBar
@@ -100,6 +145,10 @@ export default function App() {
         visibleCount={visibleTasks.length}
         assignees={assignees}
         filters={filters}
+        theme={settings.theme}
+        onThemeToggle={handleThemeToggle}
+        onExport={handleExport}
+        onImport={handleImport}
         onFiltersChange={setFilters}
         onCreateTask={handleCreateTask}
       />
@@ -147,6 +196,31 @@ export default function App() {
           onConfirm={handleConfirmDelete}
           onCancel={() => setPendingDelete(null)}
         />
+      )}
+
+      {importCandidate && (
+        <ConfirmDialog
+          title="Заменить данные доски?"
+          confirmLabel="Заменить"
+          tone="danger"
+          onConfirm={handleConfirmImport}
+          onCancel={() => setImportCandidate(null)}
+        >
+          Импорт заменит все текущие задачи, исполнителей и настройки на данные из выбранного
+          файла. Это действие нельзя отменить.
+        </ConfirmDialog>
+      )}
+
+      {importError && (
+        <ConfirmDialog
+          title="Ошибка импорта"
+          confirmLabel="Понятно"
+          hideCancel
+          onConfirm={() => setImportError(null)}
+          onCancel={() => setImportError(null)}
+        >
+          {importError}
+        </ConfirmDialog>
       )}
 
       {notice && (

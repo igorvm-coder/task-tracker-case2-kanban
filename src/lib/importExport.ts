@@ -197,11 +197,11 @@ export function parseBoardData(text: string): ParseBoardResult {
     if (!task) return
     const tv = isRecord(value) ? value : null
     if (taskIds.has(task.id)) {
-      errors.push(taskLabel(tv as Record<string, unknown> | null, index) + ': id «' + task.id + '» повторяется.')
+      errors.push((taskLabel(tv as Record<string, unknown> | null, index) as string) + ': id «' + task.id + '» повторяется.')
       return
     }
     if (task.assigneeId !== null && !assigneeIds.has(task.assigneeId)) {
-      errors.push(taskLabel(tv as Record<string, unknown> | null, index) + ': исполнитель «' + task.assigneeId + '» отсутствует в списке.')
+      errors.push((taskLabel(tv as Record<string, unknown> | null, index) as string) + ': исполнитель «' + task.assigneeId + '» отсутствует в списке.')
       return
     }
     taskIds.add(task.id)

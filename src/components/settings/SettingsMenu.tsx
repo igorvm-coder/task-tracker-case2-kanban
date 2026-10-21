@@ -101,17 +101,18 @@ export function SettingsMenu({ theme, onThemeToggle, onExport, onImport }: Setti
             Импорт из JSON
           </button>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            aria-hidden="true"
-            tabIndex={-1}
-            onChange={handleFileChange}
-          />
         </div>
       )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        aria-hidden="true"
+        tabIndex={-1}
+        onChange={handleFileChange}
+      />
     </div>
   )
 }

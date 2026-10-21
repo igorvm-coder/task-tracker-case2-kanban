@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react'
 
 import { cn } from '../../lib/cn'
 
@@ -7,6 +7,8 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost'
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
   icon?: ReactNode
+  /** React 19: ref передаётся обычным пропом. */
+  ref?: Ref<HTMLButtonElement>
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
@@ -23,10 +25,12 @@ export function Button({
   className,
   children,
   type = 'button',
+  ref,
   ...props
 }: ButtonProps) {
   return (
     <button
+      ref={ref}
       type={type}
       className={cn(
         'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',

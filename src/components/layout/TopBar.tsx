@@ -1,9 +1,18 @@
 import { LayoutDashboard, Plus } from 'lucide-react'
 
+import { TaskFilters } from '../filters/TaskFilters'
+import type { TaskFilters as Filters } from '../../lib/filters'
+import type { Assignee } from '../../types/task'
 import { Button } from '../ui/Button'
 
 interface TopBarProps {
+  /** Всего задач на доске. */
   taskCount: number
+  /** Задач, которые видно с учётом фильтров. */
+  visibleCount: number
+  assignees: Assignee[]
+  filters: Filters
+  onFiltersChange: (filters: Filters) => void
   onCreateTask: () => void
 }
 
@@ -17,31 +26,47 @@ function pluralize(count: number): string {
   return 'задач'
 }
 
-/** Верхняя панель: название доски и кнопка создания задачи. */
-export function TopBar({ taskCount, onCreateTask }: TopBarProps) {
+/** Верхняя панель: название доски, поиск с фильтрами и кнопка создания задачи. */
+export function TopBar({
+  taskCount,
+  visibleCount,
+  assignees,
+  filters,
+  onFiltersChange,
+  onCreateTask,
+}: TopBarProps) {
+  const filtered = visibleCount !== taskCount
+
   return (
-    <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-white shadow-xs">
-          <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <h1 className="truncate text-[14px] font-semibold leading-tight text-ink">
-            Roadmap продукта
-          </h1>
-          <p className="truncate text-[12px] leading-tight text-ink-subtle">
-            {taskCount} {pluralize(taskCount)} на доске
-          </p>
+    <header className="flex flex-col gap-3 border-b border-line bg-surface px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-white shadow-xs">
+            <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="truncate text-[14px] font-semibold leading-tight text-ink">
+              Roadmap продукта
+            </h1>
+            <p className="truncate text-[12px] leading-tight text-ink-subtle">
+              {filtered
+                ? `${visibleCount} из ${taskCount} ${pluralize(taskCount)} на доске`
+                : `${taskCount} ${pluralize(taskCount)} на доске`}
+            </p>
+          </div>
         </div>
+
+        <Button
+          variant="primary"
+          icon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />}
+          onClick={onCreateTask}
+        >
+          <span className="hidden sm:inline">Создать задачу</span>
+          <span className="sm:hidden">Создать</span>
+        </Button>
       </div>
 
-      <Button
-        variant="primary"
-        icon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />}
-        onClick={onCreateTask}
-      >
-        Создать задачу
-      </Button>
+      <TaskFilters assignees={assignees} filters={filters} onChange={onFiltersChange} />
     </header>
   )
 }

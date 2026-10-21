@@ -16,6 +16,8 @@ interface KanbanColumnProps {
   isDropTarget: boolean
   /** Индекс, куда встанет карточка (для заглушки места вставки). */
   dropIndex: number | null
+  /** Отключает перетаскивание карточек (при активных фильтрах). */
+  dragDisabled?: boolean
   onTaskClick: (task: Task) => void
 }
 
@@ -36,6 +38,7 @@ export function KanbanColumn({
   assigneeMap,
   isDropTarget,
   dropIndex,
+  dragDisabled = false,
   onTaskClick,
 }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({
@@ -75,6 +78,7 @@ export function KanbanColumn({
                 <TaskCard
                   task={task}
                   assignee={task.assigneeId ? assigneeMap.get(task.assigneeId) : undefined}
+                  disabled={dragDisabled}
                   onClick={onTaskClick}
                 />
               </Fragment>

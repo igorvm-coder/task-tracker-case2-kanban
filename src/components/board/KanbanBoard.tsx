@@ -11,6 +11,8 @@ import { KanbanColumn } from './KanbanColumn'
 interface KanbanBoardProps {
   tasks: Task[]
   assignees: Assignee[]
+  /** Отключает перетаскивание: при активных фильтрах порядок скрытых задач не должен ломаться. */
+  dragDisabled?: boolean
   onMoveTask: (taskId: string, toStatus: TaskStatus, toIndex: number) => void
   onTaskClick: (task: Task) => void
 }
@@ -19,6 +21,7 @@ interface KanbanBoardProps {
 export function KanbanBoard({
   tasks,
   assignees,
+  dragDisabled = false,
   onMoveTask,
   onTaskClick,
 }: KanbanBoardProps) {
@@ -110,6 +113,7 @@ export function KanbanBoard({
               assigneeMap={assigneeMap}
               isDropTarget={isDropTarget}
               dropIndex={showPlaceholder ? dropTarget?.index ?? null : null}
+              dragDisabled={dragDisabled}
               onTaskClick={handleCardClick}
             />
           )

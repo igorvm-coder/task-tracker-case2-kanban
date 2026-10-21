@@ -2,7 +2,9 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { STORAGE_KEY, isBoardData } from '../lib/storage'
 import { createInitialBoardData } from '../lib/seed'
-import { moveTask as moveTaskInList } from '../lib/taskUtils'
+import { createId, moveTask as moveTaskInList, reindexTasks } from '../lib/taskUtils'
+import { formToTaskFields } from '../lib/taskValidation'
+import type { TaskFormValues } from '../lib/taskValidation'
 import type { StorageError } from './useLocalStorage'
 import { useLocalStorage } from './useLocalStorage'
 import type { BoardData } from '../types/board'
@@ -17,6 +19,12 @@ export interface UseBoardResult {
   dismissStorageError: () => void
   /** Перемещение карточки: меняет колонку (статус) и позицию, пересчитывает позиции. */
   moveTask: (taskId: string, toStatus: TaskStatus, toIndex: number) => void
+  /** Создание задачи: появляется в начале колонки «Новая». */
+  createTask: (values: TaskFormValues) => void
+  /** Обновление полей задачи. Статус и даты завершения не меняются. */
+  updateTask: (taskId: string, values: TaskFormValues) => void
+  /** Удаление задачи с пересчётом позиций. */
+  deleteTask: (taskId: string) => void
   /** Прямая замена списка задач (используется при импорте). */
   setTasks: (tasks: Task[]) => void
   setData: (updater: (previous: BoardData) => BoardData) => void
@@ -54,6 +62,46 @@ export function useBoard(): UseBoardResult {
     [setData],
   )
 
+  const createTask = useCallback(
+    (values: TaskFormValues) => {
+      setData((previous) => {
+        const newTask: Task = {
+          id: createId(),
+          ...formToTaskFields(values),
+          status: 'backlog',
+          createdAt: new Date().toISOString(),
+          completedAt: null,
+          // Новая задача появляется в начале колонки «Новая».
+          position: -1,
+        }
+        return { ...previous, tasks: reindexTasks([newTask, ...previous.tasks]) }
+      })
+    },
+    [setData],
+  )
+
+  const updateTask = useCallback(
+    (taskId: string, values: TaskFormValues) => {
+      setData((previous) => ({
+        ...previous,
+        tasks: previous.tasks.map((task) =>
+          task.id === taskId ? { ...task, ...formToTaskFields(values) } : task,
+        ),
+      }))
+    },
+    [setData],
+  )
+
+  const deleteTask = useCallback(
+    (taskId: string) => {
+      setData((previous) => ({
+        ...previous,
+        tasks: reindexTasks(previous.tasks.filter((task) => task.id !== taskId)),
+      }))
+    },
+    [setData],
+  )
+
   const dismissStorageError = useCallback(() => setStorageError(null), [])
 
   return useMemo(
@@ -64,9 +112,24 @@ export function useBoard(): UseBoardResult {
       storageError,
       dismissStorageError,
       moveTask,
+      createTask,
+      updateTask,
+      deleteTask,
       setTasks,
       setData,
     }),
-    [tasks, data.assignees, data.settings, storageError, dismissStorageError, moveTask, setTasks, setData],
+    [
+      tasks,
+      data.assignees,
+      data.settings,
+      storageError,
+      dismissStorageError,
+      moveTask,
+      createTask,
+      updateTask,
+      deleteTask,
+      setTasks,
+      setData,
+    ],
   )
 }

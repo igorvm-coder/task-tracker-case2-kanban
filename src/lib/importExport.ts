@@ -87,9 +87,11 @@ function parseTask(value: unknown, index: number, errors: string[]): Task | null
     errors.push(label + ': дата создания не является корректной датой')
     return null
   }
-  if (record.dueDate !== undefined && record.dueDate !== null && !isDateOnly(record.dueDate)) {
-    errors.push(label + ': срок должен быть датой в формате ГГГГ-ММ-ДД')
-    return null
+  if (record.dueDate !== undefined && record.dueDate !== null) {
+    if (typeof record.dueDate !== 'string' || !isDateOnly(record.dueDate)) {
+      errors.push(label + ': срок должен быть датой в формате ГГГГ-ММ-ДД')
+      return null
+    }
   }
   if (record.completedAt !== undefined && record.completedAt !== null && !isIsoDateTime(record.completedAt)) {
     errors.push(label + ': дата завершения не является корректной датой')
@@ -113,7 +115,7 @@ function parseTask(value: unknown, index: number, errors: string[]): Task | null
     priority: record.priority,
     assigneeId: record.assigneeId === undefined ? null : record.assigneeId,
     createdAt: record.createdAt,
-    dueDate: record.dueDate === undefined || record.dueDate === null ? null : record.dueDate,
+    dueDate: typeof record.dueDate === 'string' ? record.dueDate : null,
     completedAt: completedAt === null ? null : completedAt,
     tags: normalizeTags(record.tags),
     position: typeof record.position === 'number' ? record.position : 0,
